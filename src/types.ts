@@ -1,6 +1,55 @@
 /** Where Jev is served from; drives the endpoint map in jev.ts. */
 export type Provider = "typesafe" | "openrouter";
 
+// ---------- Jev (System One) API contract ----------
+// What we ask and what comes back. Pure declarations: jev.ts only transports
+// them, background.ts (decide()) only branch on them.
+
+export type NoulQuestion = {
+  type: "noul";
+  instructions: string;
+  criteria?: { true?: string; false?: string };
+};
+export type ChoiceQuestion = {
+  type: "choice";
+  instructions: string;
+  criteria: Record<string, string | null>;
+};
+export type ScoreQuestion = {
+  type: "score";
+  instructions: string;
+  criteria: string[];
+};
+export type Question = NoulQuestion | ChoiceQuestion | ScoreQuestion;
+
+export type NoulAnswer = { type: "noul"; noul: number };
+export type ChoiceAnswer = {
+  type: "choice";
+  choice: string;
+  probabilities: Record<string, number>;
+  confidence: number;
+};
+export type ScoreAnswer = {
+  type: "score";
+  score: number;
+  legend: Record<string, string>;
+  probabilities: Record<string, number>;
+  confidence: number;
+};
+export type Answer = NoulAnswer | ChoiceAnswer | ScoreAnswer;
+
+type AnswerFor<Q extends Question> = Q extends NoulQuestion
+  ? NoulAnswer
+  : Q extends ChoiceQuestion
+    ? ChoiceAnswer
+    : ScoreAnswer;
+
+export interface JevResponse<Q extends Record<string, Question>> {
+  model: string;
+  answers: { [K in keyof Q]: AnswerFor<Q[K]> };
+  usage: { input_tokens: number; output_tokens: number };
+}
+
 export interface Settings {
   enabled: boolean;
   /** TypeSafe direct API key. */
