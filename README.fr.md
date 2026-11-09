@@ -9,8 +9,12 @@ du texte. L'engagement bait, l'auto-promo, le hors-sujet et le sponsorisé sont
 repliés en une barre d'une ligne, et chaque décision est expliquée directement sur
 le post.
 
-> Projet indépendant, sans lien avec LinkedIn ni TypeSafe AI. Il te faut ta propre
-> clé API TypeSafe.
+> **Note fork :** ce fork ajoute [OpenRouter](https://openrouter.ai) comme voie
+> d'accès alternative à Jev — même modèle, facturé sur ton compte OpenRouter,
+> sans compte TypeSafe.
+
+> Projet indépendant, sans lien avec LinkedIn ni TypeSafe AI. Il te faut ta
+> propre clé API pour le fournisseur choisi (TypeSafe direct, ou OpenRouter).
 
 ## Ce que ça fait
 
@@ -27,8 +31,9 @@ le post.
   trop court pour le déclencheur « charger la suite » de LinkedIn ; lkclean le
   relance sans déplacer ta position de lecture.
 - **Rapide et pas cher** – un appel API par post, toutes les questions évaluées en
-  parallèle, verdicts mis en cache pour la session. Environ 0,042 $ par million de
-  tokens en entrée : une session de scroll coûte une fraction de centime.
+  parallèle, verdicts mis en cache pour la session. Environ 0,042 $ par million
+  de tokens en entrée (les tokens de sortie sont gratuits) : une session de
+  scroll coûte une fraction de centime, quel que soit le fournisseur.
 
 
 <img width="502" height="383" alt="notok" src="https://github.com/user-attachments/assets/6c7a739f-a63e-4953-884e-6dff45736c45" />
@@ -43,9 +48,11 @@ le post.
    LinkedIn (texte dans `[data-testid="expandable-text-box"]`), avec repli sur
    l'ancien balisage `data-id="urn:li:activity:…"`. Le post est identifié par un
    hash de son texte, LinkedIn n'exposant plus d'identifiant stable.
-2. L'auteur et le texte partent au service worker, qui appelle
-   `POST https://api.typesafe.ai/v1/systemone` avec un *state*
-   `{ user_interests, post }` et plusieurs questions typées en une seule requête :
+2. L'auteur et le texte partent au service worker, qui appelle l'endpoint System
+   One — `POST https://api.typesafe.ai/v1/systemone` (TypeSafe direct) ou
+   `POST https://openrouter.ai/api/v1/systemone` (via OpenRouter) — avec un
+   *state* `{ user_interests, post }` et plusieurs questions typées en une seule
+   requête :
 
    | Question | Type | Sens |
    | --- | --- | --- |
@@ -78,10 +85,14 @@ npm run build
 
 Puis charge le dossier `dist/` de la même façon.
 
-Clique sur l'icône de l'extension pour ouvrir les réglages : colle ta clé TypeSafe
-(depuis [console.typesafe.ai](https://console.typesafe.ai)), liste tes centres
-d'intérêt (un par ligne), éventuellement des sujets à bloquer, puis ajuste les
-seuils. Recharge LinkedIn.
+Clique sur l'icône de l'extension pour ouvrir les réglages : choisis le
+fournisseur d'API (**TypeSafe direct** ou **OpenRouter**), colle la clé
+correspondante (depuis [console.typesafe.ai](https://console.typesafe.ai) —
+`ts-…` — ou [openrouter.ai/settings/keys](https://openrouter.ai/settings/keys) —
+`sk-or-…`), liste tes centres d'intérêt (un par ligne), éventuellement des
+sujets à bloquer, puis ajuste les seuils. Mets l'id du modèle en accord avec le
+fournisseur : `jev-latest` (TypeSafe) ou `typesafe/jev-1.14` (OpenRouter).
+Recharge LinkedIn.
 
 Après chaque rebuild, clique sur ↻ sur la carte de l'extension dans
 `chrome://extensions`, puis recharge l'onglet LinkedIn.
@@ -90,6 +101,7 @@ Après chaque rebuild, clique sur ↻ sur la carte de l'extension dans
 
 | Réglage | Défaut | Effet |
 | --- | --- | --- |
+| Fournisseur d'API | TypeSafe direct | D'où Jev est appelé ; le champ de clé correspondant est utilisé |
 | Centres d'intérêt | vide | Si vide, seul le bruit est filtré (bait, auto-promo, sponsorisé) |
 | Sujets bloqués | vide | Toujours masqués quand Jev est sûr à ≥ 60 % |
 | Seuil de bruit | 70 % | Masque si P(bait) ou P(auto-promo) le dépasse |
@@ -98,13 +110,17 @@ Après chaque rebuild, clique sur ↻ sur la carte de l'extension dans
 | Longueur minimale | 40 caractères | Les posts plus courts ne sont jamais évalués |
 | Expliquer les posts gardés | oui | La ligne « Gardé par Jev » |
 | Pastille d'activité | oui | Le badge flottant Jev |
-| Modèle | `jev-latest` | Épingle une version (ex. `jev-1.13.0`) une fois tes seuils réglés |
+| Modèle | `jev-latest` | Défaut TypeSafe ; sur OpenRouter, `typesafe/jev-1.14`. Épingle une version une fois tes seuils réglés |
+
+Aussi, l'interface (page de réglages) est en anglais dans ce fork : les libellés
+du tableau ci-dessus décrivent l'effet, pas le libellé exact.
 
 ## Confidentialité
 
-- Le nom de l'auteur et le texte de chaque post affiché dans ton fil sont envoyés à
-  l'API TypeSafe pour classification. Rien d'autre ne quitte ton navigateur, et
-  lkclean n'a ni serveur ni analytics.
+- Le nom de l'auteur et le texte de chaque post affiché dans ton fil sont envoyés
+  au fournisseur Jev configuré (TypeSafe direct, ou OpenRouter) pour la
+  classification. Rien d'autre ne quitte ton navigateur, et lkclean n'a ni
+  serveur ni analytics.
 - La clé API est stockée dans le stockage synchronisé de Chrome
   (`chrome.storage.sync`).
 - Les verdicts sont mis en cache dans `chrome.storage.session` et effacés à la
@@ -122,7 +138,8 @@ npm run typecheck  # tsc --noEmit
 | `src/content.ts` | détection des posts, extraction, masquage/annotation, relance du scroll infini |
 | `src/sticker.ts` | la pastille d'activité Jev (Shadow DOM) |
 | `src/background.ts` | questions, logique de décision, cache, appels API |
-| `src/jev.ts` | client typé minimal pour l'endpoint System One |
+| `src/jev.ts` | client typé minimal pour l'endpoint System One (TypeSafe direct ou via OpenRouter) |
+| `src/types.ts` | déclarations pures : réglages, verdicts, messagerie, contrat de questions/réponses Jev |
 | `src/options.ts`, `public/options.*` | page de réglages |
 
 Pour changer ce qui est filtré, modifie `buildQuestions()` et `decide()` dans
