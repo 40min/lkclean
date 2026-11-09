@@ -1,5 +1,4 @@
-import { DEFAULT_SETTINGS, type Settings } from "./types";
-import { Provider } from "./jev";
+import { DEFAULT_SETTINGS, type Provider, type Settings } from "./types";
 
 const $ = <T extends HTMLElement>(id: string) =>
   document.getElementById(id) as T;

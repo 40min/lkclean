@@ -1,4 +1,5 @@
-import { Provider } from "./jev";
+/** Where Jev is served from; drives the endpoint map in jev.ts. */
+export type Provider = "typesafe" | "openrouter";
 
 export interface Settings {
   enabled: boolean;

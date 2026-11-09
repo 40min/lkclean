@@ -1,5 +1,7 @@
+import type { Provider } from "./types";
+
 // Minimal client for the System One endpoint — TypeSafe direct or via
-// OpenRouter, as chosen by the user (see `Provider` below).
+// OpenRouter, as chosen by the user (see `Provider` in ./types).
 // Ref.: https://docs.typesafe.ai/api + https://openrouter.ai/docs/guides/community/jev-tutorial
 
 export type NoulQuestion = {
@@ -47,11 +49,12 @@ export interface JevResponse<Q extends Record<string, Question>> {
   usage: { input_tokens: number; output_tokens: number };
 }
 
-const ENDPOINTS = {
+// Completeness is compiler-enforced: adding a value to the Provider union
+// without an endpoint here fails typecheck.
+const ENDPOINTS: Record<Provider, string> = {
   typesafe: "https://api.typesafe.ai/v1/systemone",
   openrouter: "https://openrouter.ai/api/v1/systemone",
-} as const;
-export type Provider = keyof typeof ENDPOINTS;
+};
 const TIMEOUT_MS = 10_000;
 const RETRYABLE_STATUSES = new Set([429, 502, 503, 524, 529]);
 
