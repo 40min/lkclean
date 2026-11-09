@@ -1,10 +1,12 @@
-import { askJev, type Answer, type Question } from "./jev";
+import { askJev } from "./jev";
 import {
   DEFAULT_SETTINGS,
+  type Answer,
   type CallMeta,
   type ClassifyResponse,
   type Message,
   type PostPayload,
+  type Question,
   type Settings,
   type UiSettings,
   type Verdict,

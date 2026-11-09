@@ -1,53 +1,8 @@
-import type { Provider } from "./types";
+import type { JevResponse, Provider, Question } from "./types";
 
 // Minimal client for the System One endpoint — TypeSafe direct or via
 // OpenRouter, as chosen by the user (see `Provider` in ./types).
 // Ref.: https://docs.typesafe.ai/api + https://openrouter.ai/docs/guides/community/jev-tutorial
-
-export type NoulQuestion = {
-  type: "noul";
-  instructions: string;
-  criteria?: { true?: string; false?: string };
-};
-export type ChoiceQuestion = {
-  type: "choice";
-  instructions: string;
-  criteria: Record<string, string | null>;
-};
-export type ScoreQuestion = {
-  type: "score";
-  instructions: string;
-  criteria: string[];
-};
-export type Question = NoulQuestion | ChoiceQuestion | ScoreQuestion;
-
-export type NoulAnswer = { type: "noul"; noul: number };
-export type ChoiceAnswer = {
-  type: "choice";
-  choice: string;
-  probabilities: Record<string, number>;
-  confidence: number;
-};
-export type ScoreAnswer = {
-  type: "score";
-  score: number;
-  legend: Record<string, string>;
-  probabilities: Record<string, number>;
-  confidence: number;
-};
-export type Answer = NoulAnswer | ChoiceAnswer | ScoreAnswer;
-
-type AnswerFor<Q extends Question> = Q extends NoulQuestion
-  ? NoulAnswer
-  : Q extends ChoiceQuestion
-    ? ChoiceAnswer
-    : ScoreAnswer;
-
-export interface JevResponse<Q extends Record<string, Question>> {
-  model: string;
-  answers: { [K in keyof Q]: AnswerFor<Q[K]> };
-  usage: { input_tokens: number; output_tokens: number };
-}
 
 // Completeness is compiler-enforced: adding a value to the Provider union
 // without an endpoint here fails typecheck.
