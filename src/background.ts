@@ -23,9 +23,13 @@ const NO_CALL: CallMeta = {
 
 // ---------- settings ----------
 
+let settingsCache: Settings | null = null;
+
 async function loadSettings(): Promise<Settings> {
+  if (settingsCache) return settingsCache;
   const stored = await chrome.storage.sync.get(DEFAULT_SETTINGS);
-  return { ...DEFAULT_SETTINGS, ...(stored as Partial<Settings>) };
+  settingsCache = { ...DEFAULT_SETTINGS, ...(stored as Partial<Settings>) };
+  return settingsCache;
 }
 
 // ---------- verdict cache (session) ----------
@@ -51,6 +55,7 @@ async function cacheSet(id: string, v: Verdict): Promise<void> {
 chrome.storage.onChanged.addListener((_, area) => {
   if (area === "sync") {
     memCache.clear();
+    settingsCache = null;
     void chrome.storage.session.clear();
     void chrome.action.setBadgeText({ text: "" });
   }
