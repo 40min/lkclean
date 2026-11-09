@@ -22,6 +22,15 @@
       <label for="apiKey">Clé API TypeSafe</label>
       <input type="password" id="apiKey" autocomplete="off" placeholder="ts-…">
       <small>Récupérable sur console.typesafe.ai. Stockée dans le stockage synchronisé de Chrome, jamais injectée dans la page LinkedIn.</small>
+      <!-- TODO(learner) [Étape 1 / ancre 4 — REVISED again: default typesafe,
+           TWO key fields]: ADD at the top of this section a
+           <select id="provider"> with two <option>s: TypeSafe direct
+           (value "typesafe", the default) and OpenRouter (value
+           "openrouter"). KEEP the existing key input AS the TypeSafe key, and
+           ADD a second key input `id="openrouterKey"` (placeholder "sk-or-…")
+           with a helper line pointing at openrouter.ai/settings/keys; label
+           each field after its provider. Static labels are fine for v1. KEEP
+           the "jamais injectée" promise — still true. -->
       <label for="model">Modèle</label>
       <input type="text" id="model">
     </section>

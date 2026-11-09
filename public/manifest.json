@@ -5,6 +5,9 @@
   "description": "Masque les posts LinkedIn inintéressants grâce à Jev (TypeSafe AI).",
   "permissions": ["storage"],
   "host_permissions": ["https://api.typesafe.ai/*"],
+  // TODO(learner) [Étape 1 / ancre 3 — REVISED: dual provider]: KEEP the
+  // TypeSafe entry and ADD "https://openrouter.ai/*" — the array is an
+  // allowlist, one entry per host the service worker may fetch.
   "background": { "service_worker": "background.js", "type": "module" },
   "content_scripts": [
     {

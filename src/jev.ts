@@ -1,5 +1,6 @@
-// Client minimal pour l'endpoint System One de TypeSafe.
-// Réf. : https://docs.typesafe.ai/api
+// Client minimal pour l'endpoint System One — TypeSafe direct OU via OpenRouter,
+// au choix de l'utilisateur (voir `Provider` ci-dessous).
+// Réf. : https://docs.typesafe.ai/api et https://openrouter.ai/docs/guides/community/jev-tutorial
 
 export type NoulQuestion = {
   type: "noul";
@@ -47,6 +48,18 @@ export interface JevResponse<Q extends Record<string, Question>> {
 }
 
 const ENDPOINT = "https://api.typesafe.ai/v1/systemone";
+// TODO(learner) [Étape 1 / ancre 1b — REVISED: dual provider]: replace the single
+// const with a map + derived type, and give askJev() a first parameter:
+//
+//   const ENDPOINTS = {
+//     typesafe: "https://api.typesafe.ai/v1/systemone",
+//     openrouter: "https://openrouter.ai/api/v1/systemone",
+//   } as const;
+//   export type Provider = keyof typeof ENDPOINTS;
+//
+// In askJev(...): add `provider: Provider` first, read ENDPOINTS[provider], and
+// thread the value in from background.ts (ancre 6 there). Both endpoints serve
+// the identical { model, state, questions } body — your Step 0 curl proved it.
 const TIMEOUT_MS = 10_000;
 
 export async function askJev<Q extends Record<string, Question>>(
@@ -67,6 +80,13 @@ export async function askJev<Q extends Record<string, Question>>(
   });
 
   if ((res.status === 429 || res.status === 529) && attempt < 3) {
+    // TODO(learner) [Étape 1 / ancre ... — retry]: with both providers served by
+    // this one function, widen to `res.status >= 500 || res.status === 429`
+    // (OpenRouter adds 502/503/524 retryables; TypeSafe's 529 is already >= 500).
+    // First answer for yourself: is there any 5xx in OpenRouter's table that is
+    // NOT transient? (500 "Internal Server Error" — think about what retrying it
+    // hides.)
+    // API reference: https://openrouter.ai/docs/api/api-reference/alphadecisions/submit-a-decisions-request
     const retryAfter = Number(res.headers.get("retry-after"));
     const delay = retryAfter > 0 ? Math.min(retryAfter * 1000, 10_000) : 400 * 2 ** attempt;
     await new Promise((r) => setTimeout(r, delay));

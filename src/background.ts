@@ -195,7 +195,12 @@ async function classifyOnce(post: PostPayload): Promise<Classified> {
   const cached = await cacheGet(post.id);
   if (cached) return { verdict: cached, meta: { ...NO_CALL, evaluated: true, cached: true } };
 
-  if (!s.apiKey) throw new Error("Clé API TypeSafe manquante (voir les options de l'extension).");
+  // TODO(learner) [Étape 1 / ancre 6 — REVISED again: default typesafe, TWO
+  // key fields]: make this provider-neutral, e.g. "aucune clé API pour ce
+  // fournisseur (voir les options de l'extension)", and select the key by
+  // provider: `const apiKey = s.provider === "openrouter" ? s.openrouterApiKey
+  // : s.apiKey`. Then pass BOTH apiKey and s.provider into askJev() (see
+  // jev.ts ancre 1b).
 
   const state = {
     user_interests: s.interests,

@@ -29,6 +29,14 @@ export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
   apiKey: "",
   model: "jev-latest",
+  // TODO(learner) [Étape 1 / ancre 2 — REVISED again: default typesafe, TWO
+  // key fields]: ADD to this interface: `provider: Provider` (import the type
+  // from "./jev") and `openrouterApiKey: string`. In DEFAULT_SETTINGS add
+  // `provider: "typesafe"` and `openrouterApiKey: ""`, and LEAVE the existing
+  // `apiKey` (it stays the TypeSafe key — an existing install's synced storage
+  // keeps working) and `model: "jev-latest"` alone; they pair with the
+  // default provider. Note accepted rough edge: switching provider does not
+  // auto-switch `model` — document your v1 stance in a comment here.
   interests: [],
   blocked: [],
   interestThreshold: 0.35,

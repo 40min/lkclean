@@ -59,6 +59,12 @@ async function load(): Promise<void> {
   render({ ...DEFAULT_SETTINGS, ...(stored as Partial<Settings>) });
 }
 
+// TODO(learner) [Étape 1 / ancre 5 — REVISED again: TWO key fields]: map BOTH
+// new fields through this file — add `provider` (an HTMLSelectElement,
+// id="provider") and `openrouterApiKey` (a password input, id="openrouterKey")
+// to the `fields` map, then mirror BOTH in render() and read() the way
+// `apiKey` / `model` flow today.
+
 async function save(): Promise<void> {
   await chrome.storage.sync.set(read());
   status.textContent = "Enregistré. Les nouveaux posts suivent ces réglages ; recharge LinkedIn pour réévaluer le fil.";
