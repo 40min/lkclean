@@ -1,6 +1,6 @@
 [data-lkclean-hidden] > :not(.lkclean-bar) { display: none !important; }
 [data-lkclean-hidden] { padding: 0 !important; min-height: 0 !important; }
-/* Relance du scroll infini : pousse brièvement le marqueur de fin de fil hors de l'écran. */
+/* Infinite scroll kick: briefly pushes the end-of-feed marker off the screen. */
 [data-lkclean-push] { margin-bottom: 8000px !important; }
 
 .lkclean-bar, .lkclean-note {
@@ -16,7 +16,7 @@
 }
 .lkclean-bar { padding: 8px 14px; margin: 4px 0; background: var(--lk-fill); border-radius: 8px; }
 .lkclean-bar--shown { margin-bottom: 8px; }
-/* Post gardé : bloc vert plein, textes blancs (contraste ≥ 5:1, identique en thème clair et sombre). */
+/* Kept post: solid green block, white text (contrast ≥ 5:1, identical in light and dark themes). */
 .lkclean-note, .lkclean-note.lkclean--dark {
   --lk-ink: #ffffff; --lk-muted: #ffffff; --lk-line: #ffffff73;
   padding: 7px 12px; margin: 4px 0 6px; border-radius: 8px; background: #0f7a61;

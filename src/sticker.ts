@@ -1,9 +1,9 @@
 import type { CallMeta, Verdict } from "./types";
 
-// Pastille flottante « activité Jev ». Vit dans un Shadow DOM accroché à <html> :
-// hors de l'arbre React de LinkedIn et à l'abri de son CSS.
+// Floating "Jev activity" sticker. Lives in a Shadow DOM attached to <html>:
+// outside LinkedIn's React tree and shielded from its CSS.
 
-/** Jev 1.13 : 0,042 $ par million de tokens en entrée, sortie gratuite. */
+/** Jev 1.14: $0.042 per million input tokens; output tokens are free. */
 const USD_PER_TOKEN = 0.042 / 1_000_000;
 const SPARK_MAX = 32;
 const RECENT_MAX = 5;
@@ -73,7 +73,7 @@ const CSS = `
 .spark { display: flex; align-items: flex-end; gap: 2px; height: 30px; margin-bottom: 12px; }
 .spark i { flex: 1; max-width: 8px; min-height: 2px; border-radius: 2px 2px 0 0; background: #4b5763; }
 .spark i.h { background: #38c6a4; }
-.spark:empty::after { content: "en attente du premier appel…"; color: #6f7b87; font-size: 11.5px; align-self: center; }
+.spark:empty::after { content: "waiting for the first call…"; color: #6f7b87; font-size: 11.5px; align-self: center; }
 .recent { list-style: none; margin: 0 0 10px; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
 .recent li { display: flex; gap: 8px; justify-content: space-between; min-width: 0; }
 .recent li span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -113,16 +113,16 @@ function build(): void {
   panel.id = "panel";
 
   const head = el("div", "head");
-  head.append(el("strong", "", "Activité Jev"), (refs.model = el("span", "muted")));
+  head.append(el("strong", "", "Jev activity"), (refs.model = el("span", "muted")));
 
   const grid = el("div", "grid");
   for (const [key, label] of [
-    ["analysed", "Analysés"],
-    ["hidden", "Masqués"],
-    ["inflight", "En cours"],
+    ["analysed", "Analysed"],
+    ["hidden", "Hidden"],
+    ["inflight", "In flight"],
     ["tokens", "Tokens"],
-    ["cost", "Coût"],
-    ["latency", "Latence"],
+    ["cost", "Cost"],
+    ["latency", "Latency"],
   ] as const) {
     const s = el("div", "stat");
     s.append(el("span", "", label), (refs[key] = el("b", "", "0")));
@@ -130,10 +130,10 @@ function build(): void {
   }
 
   refs.spark = el("div", "spark");
-  refs.spark.title = "Latence des derniers appels (vert = post masqué)";
+  refs.spark.title = "Latency of recent calls (green = post hidden)";
   refs.recent = el("ul", "recent");
   refs.err = el("p", "err");
-  const opts = el("button", "link", "Réglages");
+  const opts = el("button", "link", "Settings");
   opts.type = "button";
   opts.addEventListener("click", () => void chrome.runtime.sendMessage({ type: "openOptions" }));
   panel.append(head, grid, refs.spark, refs.recent, refs.err, opts);
@@ -161,7 +161,7 @@ function setText(node: HTMLElement | undefined, text: string, bump = false): voi
   node.textContent = text;
   if (bump) {
     node.classList.remove("bump");
-    void node.offsetWidth; // relance l'animation
+    void node.offsetWidth; // restart the animation
     node.classList.add("bump");
   }
 }
@@ -172,17 +172,17 @@ function render(): void {
   refs.wrap?.classList.toggle("busy", s.inflight > 0);
   refs.wrap?.classList.toggle("error", s.error !== "");
 
-  const share = s.analysed ? ` (${Math.round((s.hidden / s.analysed) * 100)} %)` : "";
-  setText(refs.summary, s.error ? "en panne" : `${s.analysed} lus · ${s.hidden} masqués`, true);
+  const share = s.analysed ? ` (${Math.round((s.hidden / s.analysed) * 100)}%)` : "";
+  setText(refs.summary, s.error ? "down" : `${s.analysed} read · ${s.hidden} hidden`, true);
   setText(refs.analysed, String(s.analysed));
   setText(refs.hidden, `${s.hidden}${share}`);
   setText(refs.inflight, String(s.inflight));
   setText(refs.tokens, s.tokens >= 10_000 ? `${(s.tokens / 1000).toFixed(1)}k` : String(s.tokens));
-  setText(refs.cost, `${(s.tokens * USD_PER_TOKEN).toFixed(4).replace(".", ",")} $`);
+  setText(refs.cost, `$${(s.tokens * USD_PER_TOKEN).toFixed(4)}`);
   setText(refs.latency, s.calls ? `${Math.round(s.msTotal / s.calls)} ms` : "—");
   setText(refs.model, s.model);
   setText(refs.err, s.error);
-  if (refs.cost) refs.cost.title = `${s.calls} appels · ${s.cacheHits} verdicts servis par le cache`;
+  if (refs.cost) refs.cost.title = `${s.calls} calls · ${s.cacheHits} verdicts served from the cache`;
 
   if (refs.spark) {
     const max = Math.max(1, ...s.spark.map((p) => p.ms));
@@ -216,7 +216,7 @@ export const sticker = {
     stats.inflight++;
     render();
   },
-  /** Fin d'un passage, qu'il y ait eu appel à Jev ou non. */
+  /** End of a pass, whether or not a Jev call happened. */
   settle(author: string, verdict: Verdict, meta: CallMeta, label: string): void {
     stats.inflight = Math.max(0, stats.inflight - 1);
     stats.error = "";

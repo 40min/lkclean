@@ -1,42 +1,52 @@
+import { Provider } from "./jev";
+
 export interface Settings {
   enabled: boolean;
+  /** TypeSafe direct API key. */
   apiKey: string;
+  /**
+   * v1 stance: the model id does NOT follow a provider switch; the user keeps
+   * it up to date (the sticker shows which model actually served the verdicts).
+   * Auto-suggesting a model per provider = stretch goal.
+   */
   model: string;
-  /** Une ligne par centre d'intérêt, ex. "IA appliquée", "product management" */
+  provider: Provider;
+  openrouterApiKey: string;
+  /** One interest per line, e.g. "applied AI", "product management" */
   interests: string[];
-  /** Sujets à masquer d'office, ex. "offres d'emploi", "crypto" */
+  /** Topics to always hide, e.g. "job offers", "crypto" */
   blocked: string[];
-  /** Masquer si P(correspond aux intérêts) < seuil */
+  /** Hide if P(matches interests) < threshold */
   interestThreshold: number;
-  /** Masquer si P(engagement bait / auto-promo) > seuil */
+  /** Hide if P(engagement bait / self-promo) > threshold */
   noiseThreshold: number;
-  /** Ne jamais masquer un post de moins de N caractères (souvent une image seule) */
+  /** Never hide a post shorter than N characters (often an image alone) */
   minChars: number;
   hideSponsored: boolean;
-  /** Afficher, sur les posts gardés, pourquoi Jev les a laissés passer */
+  /** Show, on kept posts, why Jev let them pass */
   showKeptReason: boolean;
-  /** Pastille flottante « activité Jev » sur la page LinkedIn */
+  /** Floating "Jev activity" sticker on the LinkedIn page */
   showSticker: boolean;
 }
 
-/** Sous-ensemble des réglages exposé au content script (jamais la clé API). */
+/** Subset of the settings exposed to the content script (never the API key). */
 export type UiSettings = Pick<
   Settings,
-  "enabled" | "showKeptReason" | "showSticker" | "noiseThreshold" | "interestThreshold"
+  | "enabled"
+  | "showKeptReason"
+  | "showSticker"
+  | "noiseThreshold"
+  | "interestThreshold"
 >;
 
 export const DEFAULT_SETTINGS: Settings = {
   enabled: true,
   apiKey: "",
+  /** v1 stance: the model id does NOT follow the provider switch; verified
+   *  after each change. Fixing grudges mechanically = stretch goal. */
   model: "jev-latest",
-  // TODO(learner) [Étape 1 / ancre 2 — REVISED again: default typesafe, TWO
-  // key fields]: ADD to this interface: `provider: Provider` (import the type
-  // from "./jev") and `openrouterApiKey: string`. In DEFAULT_SETTINGS add
-  // `provider: "typesafe"` and `openrouterApiKey: ""`, and LEAVE the existing
-  // `apiKey` (it stays the TypeSafe key — an existing install's synced storage
-  // keeps working) and `model: "jev-latest"` alone; they pair with the
-  // default provider. Note accepted rough edge: switching provider does not
-  // auto-switch `model` — document your v1 stance in a comment here.
+  provider: "typesafe",
+  openrouterApiKey: "",
   interests: [],
   blocked: [],
   interestThreshold: 0.35,
@@ -58,9 +68,9 @@ export interface Verdict {
   hide: boolean;
   reason?: Reason;
   detail?: string;
-  /** Centre d'intérêt de l'utilisateur que le post recoupe le plus, s'il y en a un */
+  /** The user's interest the post matches most, if any */
   interest?: string;
-  /** scores bruts, utiles pour le debug */
+  /** raw scores, useful for debugging */
   scores?: Record<string, number>;
 }
 
@@ -71,9 +81,9 @@ export interface PostPayload {
   sponsored: boolean;
 }
 
-/** Ce qu'a coûté le verdict : sert à la pastille d'activité. */
+/** What the verdict cost: powers the activity sticker. */
 export interface CallMeta {
-  /** false si aucun appel à Jev n'a été nécessaire (sponsorisé, trop court, filtrage coupé) */
+  /** false when no Jev call was needed (sponsored, too short, filtering off) */
   evaluated: boolean;
   cached: boolean;
   ms: number;

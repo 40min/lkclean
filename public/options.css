@@ -19,7 +19,7 @@ section { padding: 24px 0; border-top: 1px solid var(--line); }
 label { display: block; font-weight: 500; margin: 14px 0 6px; }
 label:first-of-type { margin-top: 0; }
 small { display: block; color: var(--muted); font-size: 13px; margin-top: 6px; }
-input[type="text"], input[type="password"], input[type="number"], textarea {
+input[type="text"], input[type="password"], input[type="number"], textarea, select {
   width: 100%; padding: 9px 11px; font: inherit; color: var(--ink);
   background: var(--field); border: 1px solid var(--line); border-radius: 6px;
 }

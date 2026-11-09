@@ -1,10 +1,13 @@
 import { DEFAULT_SETTINGS, type Settings } from "./types";
+import { Provider } from "./jev";
 
-const $ = <T extends HTMLElement>(id: string) => document.getElementById(id) as T;
-
+const $ = <T extends HTMLElement>(id: string) =>
+  document.getElementById(id) as T;
 const fields = {
   enabled: $<HTMLInputElement>("enabled"),
   apiKey: $<HTMLInputElement>("apiKey"),
+  provider: $<HTMLSelectElement>("provider"),
+  openrouterKey: $<HTMLInputElement>("openrouterKey"),
   model: $<HTMLInputElement>("model"),
   interests: $<HTMLTextAreaElement>("interests"),
   blocked: $<HTMLTextAreaElement>("blocked"),
@@ -19,13 +22,19 @@ const noiseOut = $<HTMLOutputElement>("noiseOut");
 const interestOut = $<HTMLOutputElement>("interestOut");
 const status = $<HTMLSpanElement>("status");
 
-const lines = (s: string) => s.split("\n").map((l) => l.trim()).filter(Boolean);
-const pct = (v: string) => `${Math.round(Number(v) * 100)} %`;
+const lines = (s: string) =>
+  s
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean);
+const pct = (v: string) => `${Math.round(Number(v) * 100)}%`;
 
 function render(s: Settings): void {
   fields.enabled.checked = s.enabled;
   fields.apiKey.value = s.apiKey;
   fields.model.value = s.model;
+  fields.provider.value = s.provider;
+  fields.openrouterKey.value = s.openrouterApiKey;
   fields.interests.value = s.interests.join("\n");
   fields.blocked.value = s.blocked.join("\n");
   fields.noiseThreshold.value = String(s.noiseThreshold);
@@ -38,10 +47,18 @@ function render(s: Settings): void {
   interestOut.value = pct(fields.interestThreshold.value);
 }
 
+function isProvider(v: string): v is Provider {
+  return v === "typesafe" || v === "openrouter";
+}
+
 function read(): Settings {
   return {
     enabled: fields.enabled.checked,
     apiKey: fields.apiKey.value.trim(),
+    provider: isProvider(fields.provider.value)
+      ? fields.provider.value
+      : DEFAULT_SETTINGS.provider,
+    openrouterApiKey: fields.openrouterKey.value.trim(),
     model: fields.model.value.trim() || DEFAULT_SETTINGS.model,
     interests: lines(fields.interests.value),
     blocked: lines(fields.blocked.value),
@@ -59,19 +76,20 @@ async function load(): Promise<void> {
   render({ ...DEFAULT_SETTINGS, ...(stored as Partial<Settings>) });
 }
 
-// TODO(learner) [Étape 1 / ancre 5 — REVISED again: TWO key fields]: map BOTH
-// new fields through this file — add `provider` (an HTMLSelectElement,
-// id="provider") and `openrouterApiKey` (a password input, id="openrouterKey")
-// to the `fields` map, then mirror BOTH in render() and read() the way
-// `apiKey` / `model` flow today.
-
 async function save(): Promise<void> {
   await chrome.storage.sync.set(read());
-  status.textContent = "Enregistré. Les nouveaux posts suivent ces réglages ; recharge LinkedIn pour réévaluer le fil.";
+  status.textContent =
+    "Saved. New posts follow these settings; reload LinkedIn to re-evaluate the feed.";
   setTimeout(() => (status.textContent = ""), 4000);
 }
 
-fields.noiseThreshold.addEventListener("input", () => (noiseOut.value = pct(fields.noiseThreshold.value)));
-fields.interestThreshold.addEventListener("input", () => (interestOut.value = pct(fields.interestThreshold.value)));
+fields.noiseThreshold.addEventListener(
+  "input",
+  () => (noiseOut.value = pct(fields.noiseThreshold.value)),
+);
+fields.interestThreshold.addEventListener(
+  "input",
+  () => (interestOut.value = pct(fields.interestThreshold.value)),
+);
 $<HTMLButtonElement>("save").addEventListener("click", () => void save());
 void load();
