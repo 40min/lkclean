@@ -1,5 +1,13 @@
 /** Where Jev is served from; drives the endpoint map in jev.ts. */
-export type Provider = "typesafe" | "openrouter";
+// types.ts hosts pure declarations plus the provider checklist — the one
+// deliberate runtime exception: types alone cannot enforce "listed ↔ usable".
+export const PROVIDERS = ["typesafe", "openrouter"] as const;
+export type Provider = (typeof PROVIDERS)[number];
+
+// Zero casts on purpose: an equality loop needs no cajoling of the compiler.
+export function isProvider(v: string): v is Provider {
+  return PROVIDERS.some((p) => p === v);
+}
 
 // ---------- Jev (System One) API contract ----------
 // What we ask and what comes back. Pure declarations: jev.ts only transports
@@ -144,8 +152,13 @@ export interface CallMeta {
 export type Message =
   | { type: "classify"; post: PostPayload }
   | { type: "getUiSettings" }
-  | { type: "openOptions" };
+  | { type: "openOptions" }
+  | { type: "testConnection" };
 
 export type ClassifyResponse =
   | { ok: true; verdict: Verdict; meta: CallMeta }
+  | { ok: false; error: string };
+
+export type TestConnectionResponse =
+  | { ok: true; model: string }
   | { ok: false; error: string };
