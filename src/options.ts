@@ -1,4 +1,4 @@
-import { DEFAULT_SETTINGS, type Provider, type Settings } from "./types";
+import { DEFAULT_SETTINGS, type Settings, isProvider } from "./types";
 
 const $ = <T extends HTMLElement>(id: string) =>
   document.getElementById(id) as T;
@@ -44,10 +44,6 @@ function render(s: Settings): void {
   fields.showSticker.checked = s.showSticker;
   noiseOut.value = pct(fields.noiseThreshold.value);
   interestOut.value = pct(fields.interestThreshold.value);
-}
-
-function isProvider(v: string): v is Provider {
-  return v === "typesafe" || v === "openrouter";
 }
 
 function read(): Settings {
