@@ -1,4 +1,10 @@
-import { DEFAULT_SETTINGS, type Settings, isProvider } from "./types";
+import {
+  DEFAULT_SETTINGS,
+  type Settings,
+  isProvider,
+  type TestConnectionResponse,
+  type Message,
+} from "./types";
 
 const $ = <T extends HTMLElement>(id: string) =>
   document.getElementById(id) as T;
@@ -73,9 +79,47 @@ async function load(): Promise<void> {
 
 async function save(): Promise<void> {
   await chrome.storage.sync.set(read());
-  status.textContent =
-    "Saved. New posts follow these settings; reload LinkedIn to re-evaluate the feed.";
-  setTimeout(() => (status.textContent = ""), 4000);
+  showStatus(
+    "Saved. New posts follow these settings; reload LinkedIn to re-evaluate the feed.",
+    4000,
+  );
+}
+
+let inFlight = false;
+
+// One shared timer: a new message cancels the previous dwell instead of
+// fighting it, and callers don't await the display (finally below resets
+// inFlight right away instead of pinning the button for the full dwell).
+let statusTimer: number | undefined;
+function showStatus(text: string, ms: number): void {
+  status.textContent = text;
+  clearTimeout(statusTimer);
+  statusTimer = setTimeout(() => (status.textContent = ""), ms);
+}
+
+async function testConnection(): Promise<void> {
+  if (inFlight) return;
+  inFlight = true;
+  try {
+    const state = read();
+    await chrome.storage.sync.set(state);
+    const res = await chrome.runtime.sendMessage<Message, TestConnectionResponse>({ type: "testConnection" });
+
+    if (!res) {
+      showStatus("No response from the background worker — try again.", 6000);
+      return;
+    }
+
+    if (res.ok) {
+      showStatus(`OK — saved. Model ${res.model}`, 6000);
+    } else {
+      showStatus(`Error: ${res.error}`, 6000);
+    }
+  } catch (e) {
+    showStatus(`Unexpected error: ${e instanceof Error ? e.message : String(e)}`, 6000);
+  } finally {
+    inFlight = false;
+  }
 }
 
 fields.noiseThreshold.addEventListener(
@@ -87,4 +131,6 @@ fields.interestThreshold.addEventListener(
   () => (interestOut.value = pct(fields.interestThreshold.value)),
 );
 $<HTMLButtonElement>("save").addEventListener("click", () => void save());
+$<HTMLButtonElement>("test").addEventListener("click", () => void testConnection());
+
 void load();

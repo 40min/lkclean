@@ -1,6 +1,7 @@
 import { askJev } from "./jev";
 import {
   DEFAULT_SETTINGS,
+  type TestConnectionResponse,
   type Answer,
   type CallMeta,
   type ClassifyResponse,
@@ -27,8 +28,8 @@ const NO_CALL: CallMeta = {
 
 let settingsCache: Settings | null = null;
 
-async function loadSettings(): Promise<Settings> {
-  if (settingsCache) return settingsCache;
+async function loadSettings(refresh: boolean = false): Promise<Settings> {
+  if (!refresh && settingsCache) return settingsCache;
   const stored = await chrome.storage.sync.get(DEFAULT_SETTINGS);
   settingsCache = { ...DEFAULT_SETTINGS, ...(stored as Partial<Settings>) };
   return settingsCache;
@@ -132,6 +133,22 @@ function buildQuestions(s: Settings) {
   return q;
 }
 
+function buildTestQuestions() {
+  const q: Record<string, Question> = {
+    test_question: {
+      type: "noul",
+      // Refer to state.text explicitly: "this string" alone has nothing to
+      // bind to and invites a degraded answer.
+      instructions: "In state.text: does this string contain a magic number?",
+      criteria: {
+        true: "Yes, it contains a magic number like 13, 42, or 7",
+        false: "No, it does not contain a magic number",
+      },
+    },
+  };
+  return q;
+}
+
 // ---------- decision ----------
 
 function decide(s: Settings, answers: Record<string, Answer>): Verdict {
@@ -223,6 +240,14 @@ function classify(post: PostPayload): Promise<Classified> {
   return p;
 }
 
+function apiKeyForConfiguredProvider(s: Settings): string {
+  const apiKey = s.provider === "openrouter" ? s.openrouterApiKey : s.apiKey;
+  if (!apiKey) {
+    throw new Error("No API key configured for provider: " + s.provider);
+  }
+  return apiKey;
+}
+
 async function classifyOnce(post: PostPayload): Promise<Classified> {
   const s = await loadSettings();
   if (!s.enabled) return { verdict: { hide: false }, meta: NO_CALL };
@@ -245,10 +270,7 @@ async function classifyOnce(post: PostPayload): Promise<Classified> {
     post: { author: post.author, text: post.text.slice(0, 4000) },
   };
 
-  const apiKey = s.provider === "openrouter" ? s.openrouterApiKey : s.apiKey;
-  if (!apiKey) {
-    throw new Error("No API key configured for provider: " + s.provider);
-  }
+  const apiKey = apiKeyForConfiguredProvider(s);
 
   const t0 = performance.now();
   const res = await askJev(
@@ -276,7 +298,36 @@ async function classifyOnce(post: PostPayload): Promise<Classified> {
 
 // ---------- messagerie ----------
 
+async function runSmokeTest(s: Settings): Promise<TestConnectionResponse> {
+  const apiKey = apiKeyForConfiguredProvider(s);
+
+  const smokeState = { text: "I've got 42 bottles of porter and crack 7 of them. Sad." };
+  const res = await askJev(
+    apiKey,
+    s.provider,
+    s.model,
+    smokeState,
+    buildTestQuestions(),
+  );
+  return { ok: true, model: res.model };
+}
+
 chrome.runtime.onMessage.addListener((msg: Message, _sender, sendResponse) => {
+  if (msg.type === "testConnection") {
+    // refresh=true: the options page just overwrote chrome.storage.sync
+    // (save-first); storage.onChanged's ordering vs this message dispatch
+    // is not guaranteed, so the cache must not be trusted here.
+    loadSettings(true)
+      .then((s) => runSmokeTest(s))
+      .then((r) => sendResponse(r))
+      .catch((e: unknown) =>
+        sendResponse({
+          ok: false,
+          error: e instanceof Error ? e.message : String(e),
+        } satisfies TestConnectionResponse),
+      );
+    return true;
+  }
   if (msg.type === "classify") {
     classify(msg.post)
       .then(({ verdict, meta }) =>

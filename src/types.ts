@@ -152,8 +152,13 @@ export interface CallMeta {
 export type Message =
   | { type: "classify"; post: PostPayload }
   | { type: "getUiSettings" }
-  | { type: "openOptions" };
+  | { type: "openOptions" }
+  | { type: "testConnection" };
 
 export type ClassifyResponse =
   | { ok: true; verdict: Verdict; meta: CallMeta }
+  | { ok: false; error: string };
+
+export type TestConnectionResponse =
+  | { ok: true; model: string }
   | { ok: false; error: string };
